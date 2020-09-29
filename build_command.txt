@@ -6,17 +6,28 @@ $ mbed import mbed-os
 
 $ mbed config -G MBED_OS_DIR <projects directory>/mbed-os
 
-$ mbed new project1
+$ mbed new AppProject --scm none #prevent source control management initialization
 
-$ mbed new project2
+$ mbed new DemoProject --scm none #prevent source control management initialization
 
-$ mbed new . --scm none #prevent source control management initialization
+#########################################################################################
 
-$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source project1 --source mbed-os --build BUILD/project1
+$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source DemoProject --source mbed-os --build BUILD/DemoProject
 
-$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source project2 --source mbed-os --build BUILD/project2
+#########################################################################################
 
+$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source AppProject --source mbed-os --build BUILD/AppProject
 
+#########################################################################################
+
+$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source MainProject --source mbed-os --build BUILD/MainProject
 
 ##############################
 $ mbed add mbed-os --depth mbed-os-5.15.5
+
+###########################################
+mbed toolchain GCC_ARM
+mbed target MBED_CONNECT_ODIN
+mbed compile --source MainProject --source mbed-os --build BUILD/MainProject
+###########################################
+mbed compile --source DemoProject --source mbed-os --build BUILD/DemoProject
