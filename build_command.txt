@@ -31,3 +31,11 @@ mbed target MBED_CONNECT_ODIN
 mbed compile --source MainProject --source mbed-os --build BUILD/MainProject
 ###########################################
 mbed compile --source DemoProject --source mbed-os --build BUILD/DemoProject
+
+
+
+
+
+
+####################################################
+$ cp BUILD/DemoProject/DemoProject.bin /dev/sdb1
