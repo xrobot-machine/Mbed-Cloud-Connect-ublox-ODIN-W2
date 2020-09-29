@@ -1,0 +1,22 @@
+# Create Project cmd 
+
+$ cd <projects directory>
+
+$ mbed import mbed-os
+
+$ mbed config -G MBED_OS_DIR <projects directory>/mbed-os
+
+$ mbed new project1
+
+$ mbed new project2
+
+$ mbed new . --scm none #prevent source control management initialization
+
+$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source project1 --source mbed-os --build BUILD/project1
+
+$ mbed compile -t GCC_ARM -m MBED_CONNECT_ODIN --source project2 --source mbed-os --build BUILD/project2
+
+
+
+##############################
+$ mbed add mbed-os --depth mbed-os-5.15.5
