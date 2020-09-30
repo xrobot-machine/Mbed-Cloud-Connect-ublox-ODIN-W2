@@ -4,24 +4,25 @@
  * https://os.mbed.com/docs/mbed-os/v5.15/apis/serial.html#serial-hello-world
  */
 
+#include <cstring>
 #include "mbed.h"
 #include "platform/mbed_thread.h"
 
 #define DEMO_FOR_UART 1
 #define DEMO_FOR_RTOS_THREAD 1
 #define DEMO_FOR_WIFI_LED 1
+#define WIFI_SCAN_SSID_PRNT 0
 
 #ifdef DEMO_FOR_UART
 Serial pc(USBTX, USBRX); // tx, rx
 Serial device(MBED_CONF_APP_UART1_TX, MBED_CONF_APP_UART1_RX); // tx, rx
-//void uart_passthrough_demo() {
-//}
 #endif
 
 #if DEMO_FOR_RTOS_THREAD
 #define WAIT_TIME_MS 100
 Thread threadled1, threadled2, threadled3, threadled4;
 DigitalOut led1(LED1, 1);
+
 void led1_thread() {
     while (true) {
 	led1 = !led1;
@@ -51,7 +52,7 @@ void led4_thread() {
 }
 DigitalOut led5(LED5, 1);
 DigitalOut led6(LED6, 1);
-DigitalOut led7(LED7, 1);
+DigitalOut ledwifi(LED7, 1);
 
 DigitalOut ledred(LED_RED, 1);
 DigitalOut ledgreen(LED_GREEN, 1);
@@ -69,7 +70,7 @@ void blink(DigitalOut *led) {
 #if DEMO_FOR_WIFI_LED
 Thread threadwifi;
 WiFiInterface *wifi;
-#define WIFI_SCAN 0
+
 const char *sec2str(nsapi_security_t sec)
 {
     switch (sec) {
@@ -88,15 +89,22 @@ const char *sec2str(nsapi_security_t sec)
             return "Unknown";
     }
 }
-int wifi_scan(WiFiInterface *wifi)
+
+const char *wifi_get_ssid(WiFiAccessPoint *ap)
+{
+    return ap->get_ssid();
+}
+
+bool ssid_find(const char *ssid)
 {
     WiFiAccessPoint *ap;
+    bool ret = false;
 
     printf("WiFi Scan:\n");
     int count = wifi->scan(NULL,0);
     if (count <= 0) {
         printf("scan() failed with return value: %d\n", count);
-        return 0;
+        return ret;
     }
 
     /* Limit number of network arbitrary to 15 */
@@ -105,55 +113,96 @@ int wifi_scan(WiFiInterface *wifi)
     count = wifi->scan(ap, count);
     if (count <= 0) {
         printf("scan() failed with return value: %d\n", count);
-        return 0;
+        return ret;
     }
-
+    printf("Total %d networks available. We need yo found %s SSID\n", count, ssid);
     for (int i = 0; i < count; i++) {
+#if WIFI_SCAN_SSID_PRNT
         printf("Network: %s secured: %s BSSID: %hhX:%hhX:%hhX:%hhx:%hhx:%hhx RSSI: %hhd Ch: %hhd\n", ap[i].get_ssid(),
                sec2str(ap[i].get_security()), ap[i].get_bssid()[0], ap[i].get_bssid()[1], ap[i].get_bssid()[2],
                ap[i].get_bssid()[3], ap[i].get_bssid()[4], ap[i].get_bssid()[5], ap[i].get_rssi(), ap[i].get_channel());
-    }
-    printf("%d networks available.\n", count);
-    delete[] ap;
-    return count;
-}
-void wifi_thread() {
-    wifi = WiFiInterface::get_default_instance();
-    if (!wifi) {
-        printf("ERROR: No WiFiInterface found.\n");
-        //return -1;
-    }
-
-#if WIFI_SCAN
-    int count = wifi_scan(wifi);
-    if (count == 0) {
-        printf("No WIFI APs found - can't continue further.\n");
-        //return -1;
-    }
 #endif
+#if 1
+	if (!strcmp(ssid, wifi_get_ssid(&ap[i]))) {
+            printf("ID: %d found SSID: %s.\n", i, wifi_get_ssid(&ap[i]));
+            ret = true;
+            break;
+        }
+#endif
+    }
+    delete[] ap;
+    return ret;
+}
 
-    printf("\nConnecting to %s...\n", MBED_CONF_APP_WIFI_SSID);
-    int ret = wifi->connect(MBED_CONF_APP_WIFI_SSID, MBED_CONF_APP_WIFI_PASSWORD, NSAPI_SECURITY_WPA_WPA2);
+bool connect_flag = false;
+int wifi_connect(/* const char *ssid, const char *pwd */)
+{
+    //printf("\nConnecting to %s...\n", ssid);
+    int ret = 0;
+    bool stat = false;
+
+    stat = ssid_find(MBED_CONF_APP_WIFI_SSID);
+    if (!stat) {
+       printf("Scan no found, so call wifi_disconnect");
+    }
+
+#if 1
+    ret = wifi->connect(MBED_CONF_APP_WIFI_SSID,
+		    MBED_CONF_APP_WIFI_PASSWORD,
+		    NSAPI_SECURITY_WPA_WPA2);
     if (ret != 0) {
         printf("\nConnection error: %d\n", ret);
-        //return -1;
+        return -1;
     }
-
-    led7.write(0);
+#endif
     printf("Success\n\n");
     printf("MAC: %s\n", wifi->get_mac_address());
     printf("IP: %s\n", wifi->get_ip_address());
     printf("Netmask: %s\n", wifi->get_netmask());
     printf("Gateway: %s\n", wifi->get_gateway());
     printf("RSSI: %d\n\n", wifi->get_rssi());
-    printf("\nDone\n");
-    while (true) {
-        led7 = !led7;
-        ledgreen = !ledgreen;
-        thread_sleep_for(WAIT_TIME_MS);
-    }
+    ledwifi.write(0);
+    connect_flag = true;
+    return 0;
+}
 
+void wifi_disconnect()
+{
+    ledwifi.write(1);
     wifi->disconnect();
+    connect_flag = false;
+}
+
+void wifi_thread()
+{
+    bool running = true, stat = false;
+    int ret = 0;
+
+    wifi = WiFiInterface::get_default_instance();
+    if (!wifi) {
+        printf("ERROR: No WiFiInterface found.\n");
+        //running = false;
+    }
+#if 1
+REDO:
+    ret = wifi_connect(/* MBED_CONF_APP_WIFI_SSID, MBED_CONF_APP_WIFI_PASSWORD */);
+    if (ret != 0) {
+        printf("\nConnection error: %d\n", ret);
+        //running = false;
+    }
+#endif
+
+    while (running) {
+        stat = ssid_find(MBED_CONF_APP_WIFI_SSID);
+        if (!stat) {
+            printf("Scan no found, so call wifi_disconnect");
+            wifi_disconnect();
+        }
+	if (stat && !connect_flag)
+		goto REDO;
+        thread_sleep_for(1000);
+    }
+    printf("\nwifi thread has Down\n");
 }
 #endif
 
@@ -177,7 +226,6 @@ int main() {
 
 #if DEMO_FOR_UART
     while (true) {
-        //uart_passthrough_demo();
         if (pc.readable()) {
             device.putc(pc.getc());
         }
