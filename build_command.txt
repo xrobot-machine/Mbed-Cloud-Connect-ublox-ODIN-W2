@@ -32,10 +32,9 @@ mbed compile --source MainProject --source mbed-os --build BUILD/MainProject
 ###########################################
 mbed compile --source DemoProject --source mbed-os --build BUILD/DemoProject
 
-
-
-
-
-
+mbed target UBLOX_EVK_ODIN_W2
 ####################################################
 $ cp BUILD/DemoProject/DemoProject.bin /dev/sdb1
+
+####################################################
+$ mbed compile --source DemoProject --source mbed-os --source VL53L0X  --build BUILD/DemoProject
