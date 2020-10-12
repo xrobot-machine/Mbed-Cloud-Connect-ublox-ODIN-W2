@@ -1,0 +1,32 @@
+{
+    "config": {
+        "uart1_tx": {
+            "help": "UART1 TX pin",
+            "value": "NC"
+        },
+        "uart1_rx": {
+            "help": "UART1 RX pin",
+            "value": "NC"
+        },
+        "wifi-ssid": {
+            "help": "WiFi SSID",
+            "value": "\"NETGEAR35\""
+        },
+        "wifi-password": {
+            "help": "WiFi Password",
+            "value": "\"17717039187lovelsh\""
+        }
+    },
+    "target_overrides": {
+        "*": {
+            "platform.stdio-convert-newlines": true,
+            "platform.stdio-baud-rate": 9600,
+            "drivers.uart-serial-txbuf-size": 730,
+            "drivers.uart-serial-rxbuf-size": 730
+	},
+        "MBED_CONNECT_ODIN": {
+            "uart1_tx": "PA_9",
+            "uart1_rx": "PA_10"
+        }
+    }
+}
