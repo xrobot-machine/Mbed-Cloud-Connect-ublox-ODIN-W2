@@ -10,11 +10,11 @@
         },
         "wifi-ssid": {
             "help": "WiFi SSID",
-            "value": "\"SH-PCHEN\""
+            "value": "\"Anna-MacBookPro\""
         },
         "wifi-password": {
             "help": "WiFi Password",
-            "value": "\"cortina123\""
+            "value": "\"abcd1234\""
         }
     },
     "target_overrides": {
